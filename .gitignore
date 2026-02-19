@@ -1,0 +1,40 @@
+# IDE/Editor files
+.vscode/
+.idea/
+
+# OS and misc
+.DS_Store
+Thumbs.db
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg
+.Python
+*.so
+
+# Django stuff
+*.sqlite3
+db.sqlite3
+/media/
+/static/
+
+# Linters
+.mypy_cache
+.ruff_cache
+
+# Packaging and distributions
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg

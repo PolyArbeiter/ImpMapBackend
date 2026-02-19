@@ -1,0 +1,130 @@
+[build-system]
+requires = ["setuptools==82.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "impression-map-backend"
+version = "0.1.0"
+description = "Django backend for Impression Map mobile app"
+readme = "README.md"
+authors = [
+    {name = "Sergey Nesterenko", email = "t56k.ezpf@gmail.com"}
+]
+license = {text = "GNU General Public License v3.0"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: Django",
+    "Framework :: Django :: 6.0",
+]
+dependencies = [
+    "Django==6.0.2",
+    "djangorestframework==3.16.1",
+    "asgiref==3.11.1",
+    "sqlparse==0.5.5",
+    "tzdata==2025.3",
+    "psycopg[binary]==3.3.3",
+]
+requires-python = ">=3.14"
+
+[project.optional-dependencies]
+dev = [
+    "mypy==1.19.1",
+    "ruff==0.15.1",
+    "mypy-extensions==1.1.0",
+    "pathspec==1.0.4",
+    "librt==0.8.1",
+    "types-requests>=2.31.0",
+    "django-stubs>=5.0.0",
+]
+
+[tool.ruff]
+target-version = "py314"
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    "migrations",
+    ".venv",
+    "staticfiles",
+    "media",
+]
+
+line-length = 120
+
+[tool.ruff.lint]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "C",   # mccabe complexity
+    "N",   # pep8-naming
+    "D",   # pydocstyle
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "RUF", # Ruff-specific rules
+]
+ignore = [
+    "D100", # Missing docstring in public module
+    "D101", # Missing docstring in public class
+    "D102", # Missing docstring in public method
+    "D103", # Missing docstring in public function
+    "D104", # Missing docstring in public package
+    "D203", # Incorrect blank line before class
+    "D213", # Multi-line summary second line
+    "D413", # Missing blank line after last section
+]
+fixable = ["I", "D", "UP", "RUF"]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+known-first-party = ["impression_map"]
+known-third-party = ["django", "rest_framework"]
+
+[tool.mypy]
+python_version = "3.14"
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+strict_equality = true
+check_untyped_defs = true
+disallow_untyped_defs = false  # Set to true for stricter type checking
+disallow_any_unimported = false
+disallow_any_expr = false
+disallow_any_decorated = false
+disallow_any_explicit = false
+disallow_any_generics = true
+disallow_subclassing_any = true
+ignore_missing_imports = true
+strict_optional = true
+
+[[tool.mypy.overrides]]
+module = [
+    "django.*",
+    "django.core.*",
+    "django.db.*",
+    "rest_framework.*",
+    "PIL.*",
+]
+ignore_missing_imports = true
+
+[tool.mypy.plugins]
+django-stubs = true
+
+[tool.django-stubs]
+django_settings_module = "impression_map.settings"
+
+[project.scripts]
+django-manage = "impression_map.manage:main"
