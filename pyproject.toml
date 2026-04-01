@@ -74,9 +74,12 @@ ignore = [
     "D102", # Missing docstring in public method
     "D103", # Missing docstring in public function
     "D104", # Missing docstring in public package
+    "D106",
+    "D107",
     "D203", # Incorrect blank line before class
     "D213", # Multi-line summary second line
     "D413", # Missing blank line after last section
+    "RUF012",
 ]
 fixable = ["I", "D", "UP", "RUF"]
 unfixable = []
