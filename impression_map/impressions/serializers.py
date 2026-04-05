@@ -16,6 +16,7 @@ class ImpressionSerializer(serializers.HyperlinkedModelSerializer):
             "description",
             "latitude",
             "longitude",
+            "onServer",
         ]
         read_only_fields = ["url"]
 

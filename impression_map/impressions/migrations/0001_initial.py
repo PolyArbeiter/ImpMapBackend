@@ -19,15 +19,13 @@ class Migration(migrations.Migration):
             name='Impression',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(default='Untitled', max_length=50)),
-                ('description', models.TextField(default='No description.', max_length=2000)),
+                ('title', models.CharField(default=None, max_length=50)),
+                ('description', models.TextField(default="", max_length=2000)),
                 ('location', django.contrib.gis.db.models.fields.PointField(srid=4326)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'indexes': [models.Index(fields=['user', '-created_at'], name='impressions_user_id_79e5c9_idx'), models.Index(fields=['location'], name='impression_location_gist_idx')],
+                'indexes': [models.Index(fields=['user'], name='impressions_user_id_79e5c9_idx'), models.Index(fields=['location'], name='impression_location_gist_idx')],
             },
         ),
     ]
