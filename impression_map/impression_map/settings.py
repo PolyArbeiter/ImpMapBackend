@@ -142,6 +142,3 @@ if os.name == "nt":  # Windows
     conda_prefix = Path(os.environ.get("CONDA_PREFIX", ""))
     GDAL_LIBRARY_PATH = str(conda_prefix / "Library" / "bin" / "gdal.dll")
     GEOS_LIBRARY_PATH = str(conda_prefix / "Library" / "bin" / "geos_c.dll")
-else:  # Linux / MacOS
-    GDAL_LIBRARY_PATH = str(Path(os.environ.get("CONDA_PREFIX")) / "lib" / "libgdal.dylib")
-    GEOS_LIBRARY_PATH = str(Path(os.environ.get("CONDA_PREFIX")) / "lib" / "libgeos_c.dylib")
