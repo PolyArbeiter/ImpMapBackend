@@ -9,6 +9,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -134,3 +135,13 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ]
 }
+
+# Get path to GDAL
+
+if os.name == "nt":  # Windows
+    conda_prefix = Path(os.environ.get("CONDA_PREFIX", ""))
+    GDAL_LIBRARY_PATH = str(conda_prefix / "Library" / "bin" / "gdal.dll")
+    GEOS_LIBRARY_PATH = str(conda_prefix / "Library" / "bin" / "geos_c.dll")
+else:  # Linux / MacOS
+    GDAL_LIBRARY_PATH = str(Path(os.environ.get("CONDA_PREFIX")) / "lib" / "libgdal.dylib")
+    GEOS_LIBRARY_PATH = str(Path(os.environ.get("CONDA_PREFIX")) / "lib" / "libgeos_c.dylib")
