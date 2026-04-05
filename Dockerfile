@@ -16,7 +16,8 @@ WORKDIR /app/impression_map
 
 COPY pyproject.toml ./
 
-RUN pip install --upgrade pip && pip install -e ".[dev]" --no-cache-dir --root-user-action
+RUN pip install --upgrade pip && \
+    pip install -e .[dev] --no-cache-dir --root-user-action=ignore
 
 COPY . .
 
