@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    container_name: impression_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: impression_map
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 0
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  web:
+    build: .
+    container_name: impression_web
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DEBUG=True
+      - DJANGO_ALLOWED_HOSTS=*
+      - DATABASE_URL=postgres://user:0@db:5432/impression_map
+
+volumes:
+  postgres_data:
