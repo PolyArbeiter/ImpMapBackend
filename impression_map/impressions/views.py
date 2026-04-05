@@ -5,6 +5,6 @@ from .serializers import ImpressionSerializer
 
 
 class ImpressionViewSet(viewsets.ModelViewSet):
-    queryset = Impression.objects.all().order_by("user", "-created_at")
+    queryset = Impression.objects.all().order_by("user")
     serializer_class = ImpressionSerializer
     permission_classes = [permissions.IsAuthenticated]

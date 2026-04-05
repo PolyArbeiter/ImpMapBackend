@@ -5,8 +5,8 @@ from .models import Impression
 
 
 class ImpressionSerializer(serializers.HyperlinkedModelSerializer):
-    latitude_write = serializers.FloatField(write_only=True, required=True)
-    longitude_write = serializers.FloatField(write_only=True, required=True)
+    latitude = serializers.FloatField(required=True)
+    longitude = serializers.FloatField(required=True)
 
     class Meta:
         model = Impression
@@ -16,16 +16,12 @@ class ImpressionSerializer(serializers.HyperlinkedModelSerializer):
             "description",
             "latitude",
             "longitude",
-            "latitude_write",
-            "longitude_write",
-            "created_at",
-            "updated_at",
         ]
-        read_only_fields = ["url", "created_at", "updated_at"]
+        read_only_fields = ["url"]
 
     def create(self, validated_data):
-        lat = validated_data.pop("latitude_write")
-        lng = validated_data.pop("longitude_write")
+        lat = validated_data.pop("latitude")
+        lng = validated_data.pop("longitude")
 
         validated_data["user"] = self.context["request"].user
 
@@ -35,8 +31,8 @@ class ImpressionSerializer(serializers.HyperlinkedModelSerializer):
         return impression
 
     def update(self, instance, validated_data):
-        lat = validated_data.pop("latitude_write", None)
-        lng = validated_data.pop("longitude_write", None)
+        lat = validated_data.pop("latitude", None)
+        lng = validated_data.pop("longitude", None)
 
         if lat is not None and lng is not None:
             instance.location = Point(lng, lat, srid=4326)
