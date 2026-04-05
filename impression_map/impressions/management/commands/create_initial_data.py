@@ -43,6 +43,7 @@ class Command(BaseCommand):
                 "description": "Beautiful place in the center of Moscow.",
                 "longitude": 37.6216,
                 "latitude": 55.7539,
+                "onServer": True,
             },
             {
                 "user": users[0],
@@ -50,6 +51,7 @@ class Command(BaseCommand):
                 "description": "Great place for walks, sports and picnics.",
                 "longitude": 37.6012,
                 "latitude": 55.7285,
+                "onServer": False,
             },
             {
                 "user": users[1],
@@ -57,6 +59,7 @@ class Command(BaseCommand):
                 "description": "One of the largest museums in the world.",
                 "longitude": 30.3139,
                 "latitude": 59.9398,
+                "onServer": False,
             },
             {
                 "user": users[1],
@@ -64,6 +67,7 @@ class Command(BaseCommand):
                 "description": "Sea, sun and palm trees.",
                 "longitude": 39.7231,
                 "latitude": 43.5855,
+                "onServer": True,
             },
             {
                 "user": users[0],
@@ -71,6 +75,7 @@ class Command(BaseCommand):
                 "description": "The deepest lake on the planet.",
                 "longitude": 104.9000,
                 "latitude": 51.8500,
+                "onServer": True,
             },
             {
                 "user": users[1],
@@ -78,6 +83,7 @@ class Command(BaseCommand):
                 "description": "Marble canyon with stunning views.",
                 "longitude": 30.3667,
                 "latitude": 61.9500,
+                "onServer": False,
             },
             {
                 "user": users[0],
@@ -85,6 +91,7 @@ class Command(BaseCommand):
                 "description": "Beautiful view of the Golden Bridge.",
                 "longitude": 131.8855,
                 "latitude": 43.1155,
+                "onServer": True,
             },
             {
                 "user": users[1],
@@ -92,6 +99,7 @@ class Command(BaseCommand):
                 "description": "Mountains, rivers and clean air.",
                 "longitude": 86.0000,
                 "latitude": 51.4000,
+                "onServer": True,
             },
         ]
 
