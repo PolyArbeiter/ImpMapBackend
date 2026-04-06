@@ -34,7 +34,7 @@ This project is a Django backend providing Impression Map mobile app with RESTfu
 
 - [x] auth
 - [x] impressions
-- [ ] media
+- [x] media
 - [ ] profiles
 - [ ] security
 - [ ] stats + admin

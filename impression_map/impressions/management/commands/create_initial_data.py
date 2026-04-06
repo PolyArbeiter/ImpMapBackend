@@ -1,10 +1,16 @@
+from datetime import UTC, datetime, timedelta
+from random import randint
 from typing import Any
 
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
+from django.core.files import File
 from django.core.management.base import BaseCommand
 
-from impressions.models import Impression
+from impression_map.settings import BASE_DIR
+from impressions.models import Impression, ImpressionMedia
+
+EXAMPLE_MEDIA_ROOT = BASE_DIR / "media-example"
 
 
 class Command(BaseCommand):
@@ -36,13 +42,17 @@ class Command(BaseCommand):
                 users.append(user)
                 self.stdout.write(self.style.WARNING(f"User {data['username']} already exists"))
 
+        now = datetime.now(tz=UTC)
+
         impressions_data = [
             {
                 "user": users[0],
-                "title": "Red Square",
-                "description": "Beautiful place in the center of Moscow.",
-                "longitude": 37.6216,
-                "latitude": 55.7539,
+                "title": "Between-Riversburg",
+                "description": "Beautiful place in the middle of nowhere.",
+                "longitude": 53.689715,
+                "latitude": 88.138630,
+                "date": datetime(day=10, month=8, year=2021),
+                "add_media": True,
             },
             {
                 "user": users[0],
@@ -50,6 +60,7 @@ class Command(BaseCommand):
                 "description": "Great place for walks, sports and picnics.",
                 "longitude": 37.6012,
                 "latitude": 55.7285,
+                "date": now + self._gen_rand_timedelta(),
             },
             {
                 "user": users[1],
@@ -57,6 +68,7 @@ class Command(BaseCommand):
                 "description": "One of the largest museums in the world.",
                 "longitude": 30.3139,
                 "latitude": 59.9398,
+                "date": now + self._gen_rand_timedelta(),
             },
             {
                 "user": users[1],
@@ -64,6 +76,7 @@ class Command(BaseCommand):
                 "description": "Sea, sun and palm trees.",
                 "longitude": 39.7231,
                 "latitude": 43.5855,
+                "date": now + self._gen_rand_timedelta(),
             },
             {
                 "user": users[0],
@@ -71,6 +84,7 @@ class Command(BaseCommand):
                 "description": "The deepest lake on the planet.",
                 "longitude": 104.9000,
                 "latitude": 51.8500,
+                "date": now + self._gen_rand_timedelta(),
             },
             {
                 "user": users[1],
@@ -78,6 +92,7 @@ class Command(BaseCommand):
                 "description": "Marble canyon with stunning views.",
                 "longitude": 30.3667,
                 "latitude": 61.9500,
+                "date": now + self._gen_rand_timedelta(),
             },
             {
                 "user": users[0],
@@ -85,6 +100,7 @@ class Command(BaseCommand):
                 "description": "Beautiful view of the Golden Bridge.",
                 "longitude": 131.8855,
                 "latitude": 43.1155,
+                "date": now + self._gen_rand_timedelta(),
             },
             {
                 "user": users[1],
@@ -92,18 +108,47 @@ class Command(BaseCommand):
                 "description": "Mountains, rivers and clean air.",
                 "longitude": 86.0000,
                 "latitude": 51.4000,
+                "date": now + self._gen_rand_timedelta(),
             },
         ]
 
         for data in impressions_data:
             point = Point(data["longitude"], data["latitude"], srid=4326)
 
-            Impression.objects.create(
+            impression = Impression.objects.create(
                 user=data["user"],
                 title=data["title"],
                 description=data["description"],
+                date=data["date"],
                 location=point,
             )
 
+            if data.get("add_media"):
+                self._add_example_media(impression)
+
         self.stdout.write(self.style.SUCCESS(f"Created {len(impressions_data)} Impression objects"))
         self.stdout.write(self.style.SUCCESS("Database population completed successfully."))
+
+    def _gen_rand_timedelta(self) -> timedelta:
+        return timedelta(days=randint(-2000, 0), seconds=randint(0, 24 * 60 * 60))
+
+    def _add_example_media(self, impression: Impression) -> None:
+        try:
+            with open(EXAMPLE_MEDIA_ROOT / "example.jpg", "rb") as f:
+                ImpressionMedia.objects.create(
+                    impression=impression,
+                    file=File(f, name="example.jpg"),
+                    is_video=False,
+                )
+            with open(EXAMPLE_MEDIA_ROOT / "example.mp4", "rb") as f:
+                ImpressionMedia.objects.create(
+                    impression=impression,
+                    file=File(f, name="example.mp4"),
+                    is_video=True,
+                )
+
+            self.stdout.write(self.style.SUCCESS(f"Added media to Impression: {impression.title}"))
+        except FileNotFoundError:
+            self.stdout.write(self.style.WARNING("example.jpg or example.mp4 not found."))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error adding media: {e}"))

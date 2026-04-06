@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-vkn$xt!q+qxx93qrb^^ll37c53p$+))hiu7lf7j4(v!&7qh*^e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.0.107", 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ["192.168.0.107", "localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -135,6 +135,18 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ]
 }
+
+
+# File size constraints
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MiB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
+
+
+# Media
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 
 # Get path to GDAL

@@ -1,40 +1,92 @@
+from typing import Any
+
 from django.contrib.gis.geos import Point
+from django.core.files.uploadedfile import UploadedFile
 from rest_framework import serializers
 
-from .models import Impression
+from .models import Impression, ImpressionMedia
 
 
-class ImpressionSerializer(serializers.HyperlinkedModelSerializer):
-    latitude = serializers.FloatField(required=True)
-    longitude = serializers.FloatField(required=True)
+class ImpressionMediaSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = ImpressionMedia
+        fields = ["id", "file", "is_video"]
+        read_only_fields = ["id"]
+
+
+class ImpressionReadSerializer(serializers.HyperlinkedModelSerializer):
+    latitude = serializers.FloatField(read_only=True)
+    longitude = serializers.FloatField(read_only=True)
+    date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M", read_only=True)
+    media = ImpressionMediaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Impression
-        fields = [
-            "url",
-            "title",
-            "description",
-            "latitude",
-            "longitude",
-        ]
-        read_only_fields = ["url"]
+        fields = ["url", "title", "description", "date", "latitude", "longitude", "media"]
 
-    def create(self, validated_data):
+
+# using separate serializer for writing as DRF doesn't support writable nested serializers
+class ImpressionWriteSerializer(serializers.HyperlinkedModelSerializer):
+    latitude = serializers.FloatField(required=True)
+    longitude = serializers.FloatField(required=True)
+    date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M", input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"])
+    media = serializers.ListField(
+        child=serializers.FileField(), required=False, allow_empty=True, max_length=10, write_only=True
+    )
+
+    class Meta:
+        model = Impression
+        fields = ["url", "title", "description", "date", "latitude", "longitude", "media"]
+
+    def create(self, validated_data: dict[str, Any]) -> Impression:
         lat = validated_data.pop("latitude")
         lng = validated_data.pop("longitude")
+        media_files: list[Any] = validated_data.pop("media", [])
 
         validated_data["user"] = self.context["request"].user
 
         impression = Impression(**validated_data)
         impression.location = Point(lng, lat, srid=4326)
         impression.save()
+
+        self._handle_media(impression, media_files)
         return impression
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Impression, validated_data: dict[str, Any]) -> Impression:
         lat = validated_data.pop("latitude", None)
         lng = validated_data.pop("longitude", None)
 
         if lat is not None and lng is not None:
             instance.location = Point(lng, lat, srid=4326)
 
-        return super().update(instance, validated_data)
+        instance = super().update(instance, validated_data)
+
+        media_files: list[Any] = validated_data.get("media")
+        if media_files is not None:
+            instance.media.all().delete()
+            self._handle_media(instance, media_files)
+
+        return instance
+
+    def _handle_media(self, impression: Impression, media_files: list[Any]) -> None:
+        media_objects: list[ImpressionMedia] = []
+
+        for file in media_files:
+            if not isinstance(file, UploadedFile):
+                continue
+
+            content_type = file.content_type or ""
+
+            if content_type == "image/jpeg":
+                is_video = False
+            elif content_type == "video/mp4":
+                is_video = True
+            else:
+                raise serializers.ValidationError(
+                    {"media": f"Unsupported file type: {content_type}. Only JPEG and MP4 are allowed."}
+                )
+
+            media_objects.append(ImpressionMedia(impression=impression, file=file, is_video=is_video))
+
+        if media_objects:
+            ImpressionMedia.objects.bulk_create(media_objects)
