@@ -8,7 +8,7 @@ class Impression(models.Model):
     title = models.CharField(max_length=50, default=None, null=True, blank=True)
     description = models.TextField(max_length=2000, default=None, null=True, blank=True)
     location = PointField()  # SRID=4326 (WGS84)
-    date = models.DateTimeField()
+    date = models.DateTimeField(null=True)
 
     @property
     def latitude(self) -> float:

@@ -1,8 +1,9 @@
+from datetime import datetime
 from typing import Any
 
 from django.contrib.gis.geos import Point
 from django.core.files.uploadedfile import UploadedFile
-from rest_framework import serializers
+from rest_framework import serializers, status
 
 from .models import Impression, ImpressionMedia
 
@@ -22,16 +23,24 @@ class ImpressionReadSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Impression
-        fields = ["url", "title", "description", "date", "latitude", "longitude", "media"]
+        fields = ["id", "url", "title", "description", "date", "latitude", "longitude", "media"]
 
 
 # using separate serializer for writing as DRF doesn't support writable nested serializers
 class ImpressionWriteSerializer(serializers.HyperlinkedModelSerializer):
     latitude = serializers.FloatField(required=True)
     longitude = serializers.FloatField(required=True)
-    date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M", input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"])
+    date = serializers.DateTimeField(
+        required=False,
+        format="%Y-%m-%dT%H:%M",
+        input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"],
+    )
     media = serializers.ListField(
-        child=serializers.FileField(), required=False, allow_empty=True, max_length=10, write_only=True
+        required=False,
+        child=serializers.FileField(),
+        allow_empty=True,
+        max_length=10,
+        write_only=True,
     )
 
     class Meta:
@@ -41,12 +50,14 @@ class ImpressionWriteSerializer(serializers.HyperlinkedModelSerializer):
     def create(self, validated_data: dict[str, Any]) -> Impression:
         lat = validated_data.pop("latitude")
         lng = validated_data.pop("longitude")
+        date = validated_data.pop("date") if "date" in validated_data else datetime.now()
         media_files: list[Any] = validated_data.pop("media", [])
 
         validated_data["user"] = self.context["request"].user
 
         impression = Impression(**validated_data)
         impression.location = Point(lng, lat, srid=4326)
+        impression.date = date
         impression.save()
 
         self._handle_media(impression, media_files)
@@ -55,9 +66,11 @@ class ImpressionWriteSerializer(serializers.HyperlinkedModelSerializer):
     def update(self, instance: Impression, validated_data: dict[str, Any]) -> Impression:
         lat = validated_data.pop("latitude", None)
         lng = validated_data.pop("longitude", None)
+        date = validated_data.pop("date") if "date" in validated_data else datetime.now()
 
         if lat is not None and lng is not None:
             instance.location = Point(lng, lat, srid=4326)
+        instance.date = date
 
         instance = super().update(instance, validated_data)
 
@@ -83,7 +96,8 @@ class ImpressionWriteSerializer(serializers.HyperlinkedModelSerializer):
                 is_video = True
             else:
                 raise serializers.ValidationError(
-                    {"media": f"Unsupported file type: {content_type}. Only JPEG and MP4 are allowed."}
+                    {"media": f"Unsupported file type: {content_type}. Only JPEG and MP4 are allowed."},
+                    status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                 )
 
             media_objects.append(ImpressionMedia(impression=impression, file=file, is_video=is_video))
