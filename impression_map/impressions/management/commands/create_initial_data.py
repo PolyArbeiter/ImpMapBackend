@@ -46,6 +46,7 @@ class Command(BaseCommand):
 
         impressions_data = [
             {
+                "local_id": 12,
                 "user": users[0],
                 "title": "Between-Riversburg",
                 "description": "Beautiful place in the middle of nowhere.",
@@ -55,6 +56,7 @@ class Command(BaseCommand):
                 "add_media": True,
             },
             {
+                "local_id": 13,
                 "user": users[0],
                 "title": "Gorky Park",
                 "description": "Great place for walks, sports and picnics.",
@@ -63,6 +65,7 @@ class Command(BaseCommand):
                 "date": now + self._gen_rand_timedelta(),
             },
             {
+                "local_id": 11,
                 "user": users[1],
                 "title": "Hermitage",
                 "description": "One of the largest museums in the world.",
@@ -71,6 +74,7 @@ class Command(BaseCommand):
                 "date": now + self._gen_rand_timedelta(),
             },
             {
+                "local_id": 12,
                 "user": users[1],
                 "title": "Sochi Beach",
                 "description": "Sea, sun and palm trees.",
@@ -79,6 +83,7 @@ class Command(BaseCommand):
                 "date": now + self._gen_rand_timedelta(),
             },
             {
+                "local_id": 1,
                 "user": users[0],
                 "title": "Baikal Lake",
                 "description": "The deepest lake on the planet.",
@@ -87,6 +92,7 @@ class Command(BaseCommand):
                 "date": now + self._gen_rand_timedelta(),
             },
             {
+                "local_id": 2,
                 "user": users[1],
                 "title": "Ruskeala",
                 "description": "Marble canyon with stunning views.",
@@ -95,6 +101,7 @@ class Command(BaseCommand):
                 "date": now + self._gen_rand_timedelta(),
             },
             {
+                "local_id": 3,
                 "user": users[0],
                 "title": "Vladivostok Bridge",
                 "description": "Beautiful view of the Golden Bridge.",
@@ -103,6 +110,7 @@ class Command(BaseCommand):
                 "date": now + self._gen_rand_timedelta(),
             },
             {
+                "local_id": 4,
                 "user": users[1],
                 "title": "Altai Mountains",
                 "description": "Mountains, rivers and clean air.",
@@ -116,6 +124,7 @@ class Command(BaseCommand):
             point = Point(data["longitude"], data["latitude"], srid=4326)
 
             impression = Impression.objects.create(
+                local_id=data["local_id"],
                 user=data["user"],
                 title=data["title"],
                 description=data["description"],

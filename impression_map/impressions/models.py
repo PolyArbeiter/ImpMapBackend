@@ -4,6 +4,7 @@ from django.db import models
 
 
 class Impression(models.Model):
+    local_id = models.BigIntegerField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=50, default=None, null=True, blank=True)
     description = models.TextField(max_length=2000, default=None, null=True, blank=True)
@@ -22,6 +23,12 @@ class Impression(models.Model):
         indexes = [
             models.Index(fields=["user"]),
             models.Index(fields=["location"], name="impression_location_gist_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                name="local_id is unique in user's pool",
+                fields=["user_id", "local_id"],
+            ),
         ]
 
     def __str__(self) -> str:

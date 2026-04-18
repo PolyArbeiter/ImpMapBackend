@@ -23,7 +23,7 @@ class ImpressionReadSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Impression
-        fields = ["id", "url", "title", "description", "date", "latitude", "longitude", "media"]
+        fields = ["id", "local_id", "user", "url", "title", "description", "date", "latitude", "longitude", "media"]
 
 
 # using separate serializer for writing as DRF doesn't support writable nested serializers
@@ -45,7 +45,7 @@ class ImpressionWriteSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Impression
-        fields = ["url", "title", "description", "date", "latitude", "longitude", "media"]
+        fields = ["url", "local_id", "title", "description", "date", "latitude", "longitude", "media"]
 
     def create(self, validated_data: dict[str, Any]) -> Impression:
         lat = validated_data.pop("latitude")
