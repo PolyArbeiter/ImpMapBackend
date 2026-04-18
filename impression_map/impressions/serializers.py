@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from typing import Any
 
@@ -7,15 +8,36 @@ from rest_framework import serializers, status
 
 from .models import Impression, ImpressionMedia
 
+CAMEL_CASE_REGEX = re.compile(r"(?<!^)(?=[A-Z])")
 
-class ImpressionMediaSerializer(serializers.HyperlinkedModelSerializer):
+
+class CamelCaseMixin(serializers.Serializer):
+    def _snake_to_camel(self, snake_str: str) -> str:
+        components = snake_str.split("_")
+        return components[0] + "".join(x.title() for x in components[1:])
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        return {self._snake_to_camel(key): value for key, value in representation.items()}
+
+    def to_internal_value(self, data):
+        snake_case_data = {}
+        for key, value in data.items():
+            # camelCase -> snake_case
+            snake_key = re.sub(CAMEL_CASE_REGEX, "_", key).lower()
+            snake_case_data[snake_key] = value
+        return super().to_internal_value(snake_case_data)
+
+
+class ImpressionMediaSerializer(CamelCaseMixin, serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ImpressionMedia
         fields = ["id", "file", "is_video"]
         read_only_fields = ["id"]
 
 
-class ImpressionReadSerializer(serializers.HyperlinkedModelSerializer):
+class ImpressionReadSerializer(CamelCaseMixin, serializers.HyperlinkedModelSerializer):
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
     latitude = serializers.FloatField(read_only=True)
     longitude = serializers.FloatField(read_only=True)
     date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M", read_only=True)
@@ -23,11 +45,11 @@ class ImpressionReadSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Impression
-        fields = ["id", "local_id", "user", "url", "title", "description", "date", "latitude", "longitude", "media"]
+        fields = ["id", "local_id", "user_id", "url", "title", "description", "date", "latitude", "longitude", "media"]
 
 
 # using separate serializer for writing as DRF doesn't support writable nested serializers
-class ImpressionWriteSerializer(serializers.HyperlinkedModelSerializer):
+class ImpressionWriteSerializer(CamelCaseMixin, serializers.HyperlinkedModelSerializer):
     latitude = serializers.FloatField(required=True)
     longitude = serializers.FloatField(required=True)
     date = serializers.DateTimeField(
