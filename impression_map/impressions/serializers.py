@@ -37,7 +37,7 @@ class ImpressionMediaSerializer(CamelCaseMixin, serializers.HyperlinkedModelSeri
 
 
 class ImpressionReadSerializer(CamelCaseMixin, serializers.HyperlinkedModelSerializer):
-    user_id = serializers.IntegerField(source="user.id", read_only=True)
+    user_id = serializers.SerializerMethodField()
     latitude = serializers.FloatField(read_only=True)
     longitude = serializers.FloatField(read_only=True)
     date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M", read_only=True)
@@ -46,6 +46,12 @@ class ImpressionReadSerializer(CamelCaseMixin, serializers.HyperlinkedModelSeria
     class Meta:
         model = Impression
         fields = ["id", "local_id", "user_id", "url", "title", "description", "date", "latitude", "longitude", "media"]
+
+    def get_user_id(self, obj):
+        request = self.context.get("request")
+        if request and request.user == obj.user:
+            return None
+        return obj.user_id
 
 
 # using separate serializer for writing as DRF doesn't support writable nested serializers
