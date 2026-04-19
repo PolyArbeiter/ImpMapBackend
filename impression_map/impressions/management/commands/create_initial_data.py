@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 from django.core.files import File
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from impression_map.settings import BASE_DIR
 from impressions.models import Impression, ImpressionMedia
@@ -42,7 +43,7 @@ class Command(BaseCommand):
                 users.append(user)
                 self.stdout.write(self.style.WARNING(f"User {data['username']} already exists"))
 
-        now = datetime.now(tz=UTC)
+        now = timezone.now()
 
         impressions_data = [
             {
@@ -52,8 +53,8 @@ class Command(BaseCommand):
                 "description": "Beautiful place in the middle of nowhere.",
                 "longitude": 53.689715,
                 "latitude": 88.138630,
-                "date": datetime(day=10, month=8, year=2021),
-                "add_media": True,
+                "date": datetime(day=10, month=8, year=2021, tzinfo=UTC),
+                "media": ["example.jpg"],
             },
             {
                 "local_id": 13,
@@ -63,6 +64,7 @@ class Command(BaseCommand):
                 "longitude": 37.6012,
                 "latitude": 55.7285,
                 "date": now + self._gen_rand_timedelta(),
+                "media": ["example1.jpg", "example2.jpg"],
             },
             {
                 "local_id": 11,
@@ -132,8 +134,9 @@ class Command(BaseCommand):
                 location=point,
             )
 
-            if data.get("add_media"):
-                self._add_example_media(impression)
+            if files := data.get("media"):
+                for filename in files:
+                    self._add_example_media(impression, filename)
 
         self.stdout.write(self.style.SUCCESS(f"Created {len(impressions_data)} Impression objects"))
         self.stdout.write(self.style.SUCCESS("Database population completed successfully."))
@@ -141,23 +144,17 @@ class Command(BaseCommand):
     def _gen_rand_timedelta(self) -> timedelta:
         return timedelta(days=randint(-2000, 0), seconds=randint(0, 24 * 60 * 60))
 
-    def _add_example_media(self, impression: Impression) -> None:
+    def _add_example_media(self, impression: Impression, name: str) -> None:
         try:
-            with open(EXAMPLE_MEDIA_ROOT / "example.jpg", "rb") as f:
+            with open(EXAMPLE_MEDIA_ROOT / name, "rb") as f:
                 ImpressionMedia.objects.create(
                     impression=impression,
-                    file=File(f, name="example.jpg"),
-                    is_video=False,
-                )
-            with open(EXAMPLE_MEDIA_ROOT / "example.mp4", "rb") as f:
-                ImpressionMedia.objects.create(
-                    impression=impression,
-                    file=File(f, name="example.mp4"),
-                    is_video=True,
+                    file=File(f, name=name),
+                    is_video=name.endswith(".mp4"),
                 )
 
-            self.stdout.write(self.style.SUCCESS(f"Added media to Impression: {impression.title}"))
+            self.stdout.write(self.style.SUCCESS(f"Added media {name} to Impression: {impression.title}"))
         except FileNotFoundError:
-            self.stdout.write(self.style.WARNING("example.jpg or example.mp4 not found."))
+            self.stdout.write(self.style.WARNING(f"{name} not found."))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Error adding media: {e}"))
+            self.stdout.write(self.style.ERROR(f"Error adding {name}: {e}"))
