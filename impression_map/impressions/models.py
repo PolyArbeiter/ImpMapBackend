@@ -6,8 +6,8 @@ from django.db import models
 class Impression(models.Model):
     local_id = models.BigIntegerField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    title = models.CharField(max_length=50, default=None, null=True, blank=True)
-    description = models.TextField(max_length=2000, default=None, null=True, blank=True)
+    title = models.CharField(max_length=50, default=None, null=False, blank=False)
+    description = models.TextField(max_length=2000, default=None, null=False, blank=False)
     location = PointField()  # SRID=4326 (WGS84)
     date = models.DateTimeField(null=True)
 
