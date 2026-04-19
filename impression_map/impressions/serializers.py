@@ -1,9 +1,10 @@
+import datetime
 import re
-from datetime import datetime
 from typing import Any
 
 from django.contrib.gis.geos import Point
 from django.core.files.uploadedfile import UploadedFile
+from django.utils import timezone
 from rest_framework import serializers, status
 
 from .models import Impression, ImpressionMedia
@@ -29,6 +30,29 @@ class CamelCaseMixin(serializers.Serializer):
         return super().to_internal_value(snake_case_data)
 
 
+class UnixTimestampField(serializers.IntegerField):
+    def to_representation(self, value):
+        if value is None:
+            return None
+
+        if isinstance(value, datetime.datetime):
+            if timezone.is_naive(value):
+                value = timezone.make_aware(value, datetime.UTC)
+            return int(value.timestamp())
+
+        return super().to_representation(value)
+
+    def to_internal_value(self, data):
+        if data is None:
+            return None
+
+        try:
+            timestamp = int(data)
+            return datetime.datetime.fromtimestamp(timestamp, tz=datetime.UTC)
+        except (TypeError, ValueError) as err:
+            raise serializers.ValidationError("Invalid Unix timestamp (целое число секунд).") from err
+
+
 class ImpressionMediaSerializer(CamelCaseMixin, serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ImpressionMedia
@@ -40,12 +64,12 @@ class ImpressionReadSerializer(CamelCaseMixin, serializers.HyperlinkedModelSeria
     user_id = serializers.SerializerMethodField()
     latitude = serializers.FloatField(read_only=True)
     longitude = serializers.FloatField(read_only=True)
-    date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M", read_only=True)
+    date = UnixTimestampField(read_only=True)
     media = ImpressionMediaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Impression
-        fields = ["id", "local_id", "user_id", "url", "title", "description", "date", "latitude", "longitude", "media"]
+        fields = ["url", "id", "local_id", "user_id", "title", "description", "date", "latitude", "longitude", "media"]
 
     def get_user_id(self, obj):
         request = self.context.get("request")
@@ -58,11 +82,7 @@ class ImpressionReadSerializer(CamelCaseMixin, serializers.HyperlinkedModelSeria
 class ImpressionWriteSerializer(CamelCaseMixin, serializers.HyperlinkedModelSerializer):
     latitude = serializers.FloatField(required=True)
     longitude = serializers.FloatField(required=True)
-    date = serializers.DateTimeField(
-        required=False,
-        format="%Y-%m-%dT%H:%M",
-        input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"],
-    )
+    date = UnixTimestampField(required=False, allow_null=True)
     media = serializers.ListField(
         required=False,
         child=serializers.FileField(),
@@ -78,7 +98,10 @@ class ImpressionWriteSerializer(CamelCaseMixin, serializers.HyperlinkedModelSeri
     def create(self, validated_data: dict[str, Any]) -> Impression:
         lat = validated_data.pop("latitude")
         lng = validated_data.pop("longitude")
-        date = validated_data.pop("date") if "date" in validated_data else datetime.now()
+
+        date = validated_data.pop("date") if "date" in validated_data else timezone.now()
+        date.replace(tzinfo=datetime.UTC)
+
         media_files: list[Any] = validated_data.pop("media", [])
 
         validated_data["user"] = self.context["request"].user
@@ -94,7 +117,9 @@ class ImpressionWriteSerializer(CamelCaseMixin, serializers.HyperlinkedModelSeri
     def update(self, instance: Impression, validated_data: dict[str, Any]) -> Impression:
         lat = validated_data.pop("latitude", None)
         lng = validated_data.pop("longitude", None)
-        date = validated_data.pop("date") if "date" in validated_data else datetime.now()
+
+        date = validated_data.pop("date") if "date" in validated_data else timezone.now()
+        date.replace(tzinfo=datetime.UTC)
 
         if lat is not None and lng is not None:
             instance.location = Point(lng, lat, srid=4326)
