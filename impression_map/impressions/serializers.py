@@ -1,15 +1,18 @@
 import datetime
+import logging
 import re
-from typing import Any
 
 from django.contrib.gis.geos import Point
 from django.core.files.uploadedfile import UploadedFile
 from django.utils import timezone
+from django.utils.datastructures import MultiValueDict
 from rest_framework import serializers, status
 
 from .models import Impression, ImpressionMedia
 
 CAMEL_CASE_REGEX = re.compile(r"(?<!^)(?=[A-Z])")
+
+logger = logging.getLogger(__name__)
 
 
 class CamelCaseMixin(serializers.Serializer):
@@ -21,9 +24,11 @@ class CamelCaseMixin(serializers.Serializer):
         representation = super().to_representation(instance)
         return {self._snake_to_camel(key): value for key, value in representation.items()}
 
-    def to_internal_value(self, data):
+    def to_internal_value(self, data: MultiValueDict[str, object]):
         snake_case_data = {}
-        for key, value in data.items():
+        for key in data:
+            t = data.getlist(key)
+            value = t if isinstance(t[0], UploadedFile) else t.pop()
             # camelCase -> snake_case
             snake_key = re.sub(CAMEL_CASE_REGEX, "_", key).lower()
             snake_case_data[snake_key] = value
@@ -31,7 +36,7 @@ class CamelCaseMixin(serializers.Serializer):
 
 
 class UnixTimestampField(serializers.IntegerField):
-    def to_representation(self, value):
+    def to_representation(self, value: object) -> int | None:
         if value is None:
             return None
 
@@ -50,7 +55,7 @@ class UnixTimestampField(serializers.IntegerField):
             timestamp = int(data)
             return datetime.datetime.fromtimestamp(timestamp, tz=datetime.UTC)
         except (TypeError, ValueError) as err:
-            raise serializers.ValidationError("Invalid Unix timestamp (целое число секунд).") from err
+            raise serializers.ValidationError("Invalid Unix timestamp (integer number of seconds).") from err
 
 
 class ImpressionMediaSerializer(CamelCaseMixin, serializers.HyperlinkedModelSerializer):
@@ -95,14 +100,17 @@ class ImpressionWriteSerializer(CamelCaseMixin, serializers.HyperlinkedModelSeri
         model = Impression
         fields = ["url", "local_id", "title", "description", "date", "latitude", "longitude", "media"]
 
-    def create(self, validated_data: dict[str, Any]) -> Impression:
+    def create(self, validated_data: dict[str, object]) -> Impression:
         lat = validated_data.pop("latitude")
         lng = validated_data.pop("longitude")
 
         date = validated_data.pop("date") if "date" in validated_data else timezone.now()
-        date.replace(tzinfo=datetime.UTC)
+        date = date.replace(tzinfo=datetime.UTC)
 
-        media_files: list[Any] = validated_data.pop("media", [])
+        media_files: object = validated_data.pop("media", [])
+        if not isinstance(media_files, list):
+            logger.error(media_files)
+            media_files = [media_files]
 
         validated_data["user"] = self.context["request"].user
 
@@ -114,27 +122,28 @@ class ImpressionWriteSerializer(CamelCaseMixin, serializers.HyperlinkedModelSeri
         self._handle_media(impression, media_files)
         return impression
 
-    def update(self, instance: Impression, validated_data: dict[str, Any]) -> Impression:
+    def update(self, instance: Impression, validated_data: dict[str, object]) -> Impression:
         lat = validated_data.pop("latitude", None)
         lng = validated_data.pop("longitude", None)
 
         date = validated_data.pop("date") if "date" in validated_data else timezone.now()
-        date.replace(tzinfo=datetime.UTC)
+        date = date.replace(tzinfo=datetime.UTC)
 
         if lat is not None and lng is not None:
             instance.location = Point(lng, lat, srid=4326)
         instance.date = date
 
-        instance = super().update(instance, validated_data)
+        media_files: object = validated_data.pop("media", None)
 
-        media_files: list[Any] = validated_data.get("media")
         if media_files is not None:
+            if not isinstance(media_files, list):
+                media_files = [media_files]
             instance.media.all().delete()
             self._handle_media(instance, media_files)
 
-        return instance
+        return super().update(instance, validated_data)
 
-    def _handle_media(self, impression: Impression, media_files: list[Any]) -> None:
+    def _handle_media(self, impression: Impression, media_files: list[object]) -> None:
         media_objects: list[ImpressionMedia] = []
 
         for file in media_files:
