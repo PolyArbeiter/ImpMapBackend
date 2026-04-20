@@ -43,7 +43,7 @@ class UnixTimestampField(serializers.IntegerField):
         if isinstance(value, datetime.datetime):
             if timezone.is_naive(value):
                 value = timezone.make_aware(value, datetime.UTC)
-            return int(value.timestamp())
+            return int(value.timestamp() * 1000)
 
         return super().to_representation(value)
 
@@ -52,7 +52,7 @@ class UnixTimestampField(serializers.IntegerField):
             return None
 
         try:
-            timestamp = int(data)
+            timestamp = int(data) // 1000
             return datetime.datetime.fromtimestamp(timestamp, tz=datetime.UTC)
         except (TypeError, ValueError) as err:
             raise serializers.ValidationError("Invalid Unix timestamp (integer number of seconds).") from err
