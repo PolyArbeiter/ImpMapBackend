@@ -20,10 +20,6 @@ class Impression(models.Model):
         return self.location.x
 
     class Meta:
-        indexes = [
-            models.Index(fields=["user"]),
-            models.Index(fields=["location"], name="impression_location_gist_idx"),
-        ]
         constraints = [
             models.UniqueConstraint(
                 name="local_id is unique in user's pool",
