@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Local data
+media/
+media-example/
+*.db
+*.sqlite3
+
+# Git
+.git/
+.gitignore
+
+# Temp files
+*.log
+*.tmp
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv
+
+# Linters
+.mypy_cache
+.ruff_cache

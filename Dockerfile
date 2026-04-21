@@ -17,11 +17,9 @@ WORKDIR /app/impression_map
 COPY pyproject.toml ./
 
 RUN pip install --upgrade pip && \
-    pip install -e .[dev] --no-cache-dir --root-user-action=ignore
+    pip install -e . --no-cache-dir --root-user-action=ignore
 
 COPY . .
-
-# RUN mkdir -p staticfiles media
 
 EXPOSE 8000
 
